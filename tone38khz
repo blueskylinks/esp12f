@@ -1,0 +1,97 @@
+#include <ESP8266WiFi.h>
+//GPIO14 D5 output to trigger the motor
+//GPIO12 D6 input to monitor manual button press
+//GPIO13 D7 input to configure the spray time
+
+//GPIO5 D1 input to monitor the input from proximity sensor
+//GPIO4 D2 output to send 38khz signal to IR LED
+ 
+const int swPin = D1;     //GPIO5 or D1 for proximity sensor input
+const int manbutton = D6; //GPIO2 or D2 for Switch
+const int spray_bt = D7;
+bool  swState = false; 
+bool  spray_btstate=false;
+bool  man_bt=false;
+int   count,count_max;
+int   spraytime=600;
+int   default_val=1;
+int   val=4;
+int   addr=0;
+byte  value;
+
+const int a0_pin = A0;    // select the input pin for the potentiometer
+int   a0_value = 0;  // variable to store the value coming from the sensor
+
+void setup ()
+{
+WiFi.disconnect();
+WiFi.forceSleepBegin();
+delay(50);
+count = 0;
+count_max =0;
+
+pinMode(D2, OUTPUT);
+analogWriteFreq(38000);
+analogWrite(D2,390);
+
+pinMode(swPin, INPUT);
+pinMode(manbutton, INPUT_PULLUP);
+
+pinMode(spray_bt, INPUT);
+
+pinMode(D5, OUTPUT);
+digitalWrite(D5, HIGH);
+
+Serial.begin(115200); 
+delay(1000);
+}
+
+
+void loop () {
+  //a0_value = analogRead(a0_pin);
+  //Serial.print("A0 Value:");
+  Serial.print("Time:");
+  Serial.print(spraytime);
+  Serial.println();
+  
+  man_bt=digitalRead(manbutton);
+  if(!man_bt){
+    digitalWrite(D5,LOW);
+    Serial.println("Sensor Triggred.......");
+    delay(spraytime);
+    digitalWrite(D5,HIGH);
+    delay(1000);
+  }
+
+  swState = digitalRead(swPin);
+  Serial.println(swState);
+    if(!swState){
+    count=count+1;
+    count_max=count_max+2;
+    Serial.println(count);
+    Serial.println(count_max);
+      if(count>=10){
+        Serial.println("Sensor Triggred.......");
+        digitalWrite(D5,LOW);
+        delay(spraytime);
+        digitalWrite(D5,HIGH);
+        delay(1000);
+        count=0; 
+      }
+      if(count_max>=100){
+        digitalWrite(D5,HIGH);
+        delay(30000);
+        count_max=0;
+      }
+   }else{
+        if(count_max>0)
+        {
+          count_max=count_max-1;
+        }
+        if(count>0){
+          count=count-2;
+          Serial.println(count);
+        }
+   }  
+  delay(50);
+}
